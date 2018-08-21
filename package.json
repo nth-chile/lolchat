@@ -13,6 +13,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-minify": "^0.4.3",
     "dotenv": "^6.0.0",
