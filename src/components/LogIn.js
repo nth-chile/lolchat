@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
 
-class SignUp extends React.Component {
+class LogIn extends React.Component {
 	constructor(props) {
 		super(props);
 
@@ -20,6 +20,7 @@ class SignUp extends React.Component {
 			<div className="container text-center">
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
+				<div>log in or sign up</div>
 				<form>
 					<label for="nickname">nickname</label>
 					<input 
@@ -46,4 +47,4 @@ class SignUp extends React.Component {
 	}
 }
 
-export { SignUp }
+export { LogIn }

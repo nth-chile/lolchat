@@ -1,15 +1,15 @@
 import React from "react";
 import { render } from "react-dom";
+import "./style/index.scss";
+require("webpack-hot-middleware/client");
+import { LogIn } from "./components"
 
 class App extends React.Component {
 	render() {
 		return (
-			<div>
-				<ul id="messages"></ul>
-			    <form action="">
-			      <input id="m" /><button>Send</button>
-			    </form>
-			</div>
+			<React.Fragment>
+				<LogIn />
+			</React.Fragment>
 		);
 	}
 }

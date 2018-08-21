@@ -2,6 +2,10 @@ var webpack = require("webpack");
 var path = require("path");
 
 var config = {
+	devServer: {
+		contentBase: path.resolve(__dirname, "dist"),
+		hot: true
+	},
 	entry: {
 		app: path.resolve(__dirname, "src") + "/index.js"	
 	},
@@ -22,9 +26,20 @@ var config = {
 			        }
 			    }
 		      ]
+			},
+			{
+				test: /\.s?css/,
+				use: [
+					"style-loader",
+					"css-loader",
+					"sass-loader"
+				]
 			}
 		]
-	}
+	},
+	plugins: [
+		new webpack.HotModuleReplacementPlugin()
+	]
 };
 
 module.exports = config;
