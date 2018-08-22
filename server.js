@@ -5,35 +5,30 @@ var	http = require("http").Server(app);
 var io = require("socket.io")(http);
 var webpack = require("webpack");
 var config = require("./webpack.config.js");
-
-var DIST_DIR = path.join(__dirname, "dist"),
-    PORT = 3000;
-
 var compiler = webpack(config);
-var webpackDevMiddleware = require("webpack-dev-middleware")(
+
+
+app.use(require("webpack-dev-middleware")(
 	compiler,
 	config.devServer
-);
-var webpackHotMiddleware = require("webpack-hot-middleware")(compiler);
-
-app.use(webpackDevMiddleware);
-app.use(webpackHotMiddleware);
-app.use(express.static(DIST_DIR));
+));
+app.use(require("webpack-hot-middleware")(compiler));
+app.use(express.static(path.join(__dirname, "dist")));
 
 
 // Routes
 app.get("*", function (req, res) {
-  res.sendFile(path.join(DIST_DIR, "index.html"));
+  res.sendFile(path.join(__dirname, "dist/index.html"));
 });
 
-app.get('/api/signup', function(req, res) {
-  signUp(req, res);
-})
+// app.get('/api/signup', function(req, res) {
+//   signUp(req, res);
+// })
 
-io.on("connection", function(socket) {
-	console.log('a user connected');
-});
+// io.on("connection", function(socket) {
+// 	console.log('a user connected');
+// });
 
-app.listen(PORT, function() {
-	console.log('listening on port 3000.')
+app.listen(3000, function() {
+	console.log('listening on port 3000.');
 });

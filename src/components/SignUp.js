@@ -21,14 +21,14 @@ class SignUp extends React.Component {
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
 				<form>
-					<label for="nickname">nickname</label>
+					<label htmlFor="nickname">nickname</label>
 					<input 
 						name="nickname"
 						onChange={e => this.setState({nickname: e.target.value})}
 						type="text"
 						value={this.state.nickname}
 					/><br />
-					<label for="password">password</label>
+					<label htmlFor="password">password</label>
 					<input 
 						name="password"
 						onChange={e => this.setState({password: e.target.value})}

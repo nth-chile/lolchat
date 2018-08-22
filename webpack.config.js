@@ -11,7 +11,8 @@ var config = {
 	},
 	output: {
 		path: path.resolve(__dirname, "dist"),
-		filename: "bundle.js"
+		filename: "bundle.js",
+		publicPath: path.resolve(__dirname, "dist")
 	},
 	module: {
 		rules: [

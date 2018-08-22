@@ -22,14 +22,14 @@ class LogIn extends React.Component {
 				<div className="h5">chat with decent strangers</div>
 				<div>log in or sign up</div>
 				<form>
-					<label for="nickname">nickname</label>
+					<label htmlFor="nickname">nickname</label>
 					<input 
 						name="nickname"
 						onChange={e => this.setState({nickname: e.target.value})}
 						type="text"
 						value={this.state.nickname}
 					/><br />
-					<label for="password">password</label>
+					<label htmlFor="password">password</label>
 					<input 
 						name="password"
 						onChange={e => this.setState({password: e.target.value})}
