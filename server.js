@@ -21,9 +21,16 @@ app.get("*", function (req, res) {
   res.sendFile(path.join(__dirname, "dist/index.html"));
 });
 
-// app.get('/api/signup', function(req, res) {
-//   signUp(req, res);
-// })
+app.post("/action/signup", function(req, res) {
+  console.log(req, res);
+  // res.json({
+  // 	req, res
+  // })
+  res.send("ok")
+  console.log(req, res)
+
+  console.log('asdfsadfsaf')
+})
 
 // io.on("connection", function(socket) {
 // 	console.log('a user connected');

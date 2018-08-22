@@ -1,5 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
+import { Link } from "react-router-dom";
 
 class LogIn extends React.Component {
 	constructor(props) {
@@ -20,10 +21,11 @@ class LogIn extends React.Component {
 			<div className="container text-center">
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
-				<div>log in or sign up</div>
+				<div>log in or <Link to={'/signup'}>sign up</Link></div>
 				<form>
 					<label htmlFor="nickname">nickname</label>
-					<input 
+					<input
+						autoComplete="nickname"
 						name="nickname"
 						onChange={e => this.setState({nickname: e.target.value})}
 						type="text"
@@ -37,6 +39,7 @@ class LogIn extends React.Component {
 						value={this.state.password}
 					/><br />
 					<input 
+						autoComplete="new-password"
 						type="submit"
 						onClick={e => this.onSubmit}
 						value="chat with a stranger"

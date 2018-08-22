@@ -1,16 +1,20 @@
 import React from "react";
 import { render } from "react-dom";
+import { BrowserRouter as Router, Route } from "react-router-dom";
 import "./style/index.scss";
 require("webpack-hot-middleware/client");
-import { LogIn } from "./components"
+import { LogIn, SignUp } from "./components"
 
 class App extends React.Component {
 	render() {
 		return (
-			<React.Fragment>
-				<header></header>
-				<LogIn />
-			</React.Fragment>
+			<Router>
+				<div className="container">
+					<header></header>
+					<Route exact={true} path="/" component={LogIn} />
+					<Route path="/signup" component={SignUp} />
+				</div>
+			</Router>
 		);
 	}
 }
