@@ -141,17 +141,31 @@ var DIFFERENCE = .3;
 
 // unmatchedClients: These are people waiting to be matched. They will be removed from this object TIMEOUT milliseconds after being added.
 var unmatchedClients = [];
+
+// matchedClients: These are people who have been matched.
+var matchedClients = [];
+
 // Flag, true if matching function is running
 var matching = false;
 
 io.on("connection", function(socket) {
 	socket.on("client: new client", function(obj, fn) {
 		fn("matching you with a stranger ...");
-		addUnmatchedClient(obj.nickname, socketId);
+		addUnmatchedClient(obj.nickname, socket.id);
+
+		console.log("CLIENTS : ", unmatchedClients);
 
 		if(!matching && unmatchedClients.length > 1) {
 			match();
 		}
+	});
+
+	socket.on("client: new message", function(obj, fn) {
+		
+
+		console.log("new message: ", obj.message,  " socketId: ", socket.id);
+
+		fn("success sending your message ...");
 	});
 });
 
@@ -160,23 +174,25 @@ function addUnmatchedClient(nickname, socketId) {
 
 	if (!clientIsInArray) unmatchedClients.push({nickname, socketId});
 
-	setTimeout(() => {
+	setTimeout((nickname) => {
 		let clientIsInArray = !!unmatchedClients.find( obj => obj[nickname] === nickname );
 		if (clientIsInArray) {
 			let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
 			unmatchedClients.splice(i, 1);
 		}
+		console.log('removed', unmatchedClients);
 	}, TIMEOUT);
 }
 
 function getDifferentItemFromArray(arr, value) {
+	if (arr.length < 2) return null;
 	var item = arr[Math.floor(Math.random() * arr.length)];
 	if (item !== value) return item;
 	return getDifferentItemFromArray(arr, value);
 }
 
-function getObjectIndexByPropVal(prop, val, arr) {
-	return arr.map(function(x) {return x[prop]; }).indexOf(val);
+function getObjectIndexByPropVal(propStr, val, arr) {
+	return arr.map(function(x) {return x[propStr]; }).indexOf(val);
 }
 
 function match() {
@@ -184,44 +200,72 @@ function match() {
 	var user1 = getDifferentItemFromArray(unmatchedClients, null);
 	var user2 = getDifferentItemFromArray(unmatchedClients, user1);
 
-	var user1Rating, user2Rating;
+	if ( !(user1 && user2) ) {
+		matching = false;
+		return;
+	}
+
+	let counter = 0;
 
 	db.then(function(client) {
 		let db = client.db("lolchat");
 
 		var users = db.collection("users").find({
-			$or: [{"nickname": user1}, {"nickname": user2}]
-		}, function(err, cursor) {
-			cursor.toArray(function(err, result) {
-				for (let i = 0; i < result.length; i++) {
-					result[i].rating = (result[i].thumbsUp + result[i].thumbsDown) / 2;
+			$or: [{"nickname": user1.nickname}, {"nickname": user2.nickname}]
+		}).toArray(function(err, result) {
+			assert.equal(err, null);
+			assert.equal(2, result.length);
+
+			let a = [user1, user2];
+
+			for (let i = 0; i < result.length; i++) {
+				result[i].rating = (result[i].thumbsUp + result[i].thumbsDown) / 2;
+
+				for (let j = 0; j < a.length; j++) {
+					if (a[j].nickname === result[i].nickname) {
+				      a[j].rating = result[i].rating;
+				    }
+				}
+			}
+
+			// Make sure connections are still open
+			io.clients((err, clientIds) => {
+				if (err) {
+					console.log(err);
 				}
 
-				user1 = {
-					nickname: result[0]["nickname"],
-					rating: result[0]["rating"]
-				};
+				var areConnectionsOpen;
+				
+				for(let i = 0; i < a.length; i++) {
+			        if (clientIds.includes(a[i].socketId)) {
+			        	areConnectionsOpen = true;
+			        } else {
+			        	areConnectionsOpen = false;
+			        	break;
+			        };
+			    }
 
-				user2 = {
-					nickname: result[1]["nickname"],
-					rating: result[1]["rating"]
-				};
+			    if (Math.abs(a[0].rating - a[1].rating) < DIFFERENCE && areConnectionsOpen) {
+				// Match the users
+				a[0].partner = a[1].socketId;
+				a[1].partner = a[0].socketId;
 
-				if (Math.abs(user1.rating - user2.rating) < DIFFERENCE && "connection is open") {
-					//ok ... matchm.
 
-					let i = unmatchedClients.indexOf(user1.nickname);
-					if (i > -1) unmatchedClients.splice(i, 1);
-					i = unmatchedClients.indexOf(user2.nickname);
-					if (i > -1) unmatchedClients.splice(i, 1);
-				}
 
-				if (unmatchedClients < 2) {
-					matching = false;
-				} else {
-					match();
+
+				// Remove the matched users from `unmatchedClients`
+				for (let i = 0; i < a.length; i++) {
+						let index = getObjectIndexByPropVal("nickname", a[i].nickname, unmatchedClients);
+						if (index > -1) unmatchedClients.splice(index, 1);
+					}
 				}
 			});
+
+			if (unmatchedClients.length < 2) {
+				matching = false;
+			} else {
+				match();
+			}
 		});
 	});
 }
