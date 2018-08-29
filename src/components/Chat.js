@@ -3,14 +3,14 @@ import { render } from "react-dom";
 import { Redirect } from "react-router-dom";
 import io from "socket.io-client";
 
-var socket = io();
-
 class Chat extends React.Component {
 	constructor(props) {
 		super(props);
 	}
 
 	componentDidMount() {
+		var socket = io();
+
 		var onConnectSend = {
 			nickname: this.props.authNickname
 		};
@@ -19,8 +19,8 @@ class Chat extends React.Component {
 			console.log(data);
 		};
 
-		socket.on("connect", function(whatIsThis) {
-			socket.emit( "client: new client", { ...onConnectSend, whatIsThis }, onConnectCb);
+		socket.on("connect", function() {
+			socket.emit( "client: new client", onConnectSend, onConnectCb);
 		});
 	}
 

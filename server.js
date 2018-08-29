@@ -52,8 +52,6 @@ app.post("/action/login", function(req, res) {
 							throw err;
 						}
 
-						console.log(result);
-
 						if (result) {
 							res.send({
 								action: "LOGIN_SUCCESS"
@@ -98,8 +96,6 @@ app.post("/action/signup", function(req, res) {
 		var existingUser = db.collection("users").findOne({
 			nickname
 		});
-
-		console.log(existingUser);
 
 		existingUser.then(function(doc) {
 			if (!doc) {
@@ -151,39 +147,59 @@ app.post("/action/signup", function(req, res) {
 
 // Time people wait before socket is closed
 var TIMEOUT = 10000;
+// Difference between user ratings above which two people cannot connect
+var DIFFERENCE = .3;
 
 // unmatchedClients: These are people waiting to be matched. They will be removed from this object TIMEOUT milliseconds after being added.
-var unmatchedClients = {};
-
-// function addFiniteObj(obj) {
-//   var {name} = obj;
-//   waiting[name] = obj;
-//   console.log(waiting);
-//   setTimeout(function(){
-//     delete waiting[name];
-//     console.log(waiting);
-//   }, 4000);
-// };
+var unmatchedClients = [];
+// Flag, true if matching function is running
+var matching = false;
 
 io.on("connection", function(socket) {
 	socket.on("client: new client", function(obj, fn) {
-		// addUnmatchedClient(obj)
-
-		console.log("OBJ: ", obj);
-
 		fn("matching you with a stranger ...");
+		addUnmatchedClient(obj.nickname);
+		!matching && match();
 	});
 });
 
-function addUnmatchedClient(obj) {
-	var { name } = obj;
-	unmatchedClients[name] = obj;
-
-	console.log('added client: ', obj);
-
+function addUnmatchedClient(nickname) {
+	unmatchedClients.push(nickname);
 	setTimeout(() => {
-		delete unmatchedClients[name];
+		let i = unmatchedClients.indexOf(nickname);
+		if (i > -1) unmatchedClients.splice(i, 1);
 	}, TIMEOUT);
+}
+
+function getDifferentItemFromArray(arr, value) {
+	var item = arr[Math.floor(Math.random() * arr.length)];
+	if (item !== value) return item;
+	return getDifferentItemFromArray(arr, value);
+}
+
+function match() {
+	matching = true;
+	var user1 = getDifferentItemFromArray(unmatchedClients, null);
+	var user2 = getDifferentItemFromArray(unmatchedClients, user1);
+
+	var user1Rating, user2Rating;
+
+	//dbcall must be synchronous?
+
+	if (Math.abs(user1Rating - user2Rating) < DIFFERENCE && "connection is open") {
+		let i = unmatchedClients.indexOf(user1);
+		if (i > -1) unmatchedClients.splice(i, 1);
+		i = unmatchedClients.indexOf(user2);
+		if (i > -1) unmatchedClients.splice(i, 1);
+
+		
+	}
+
+	if (unmatchedClients < 2) {
+		matching = false;
+	} else {
+		match();
+	}
 }
 
 
