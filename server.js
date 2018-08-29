@@ -1,19 +1,20 @@
-var path = require("path");
-var express = require("express");
-var app = express();
-var bodyParser = require("body-parser");
-var	http = require("http").Server(app);
-var io = require("socket.io")(http);
-var webpack = require("webpack");
-var config = require("./webpack.config.js");
-var compiler = webpack(config);
-var bcrypt = require("bcrypt");
+const path = require("path");
+const express = require("express");
+const app = express();
+const bodyParser = require("body-parser");
+const	http = require("http").Server(app);
+const io = require("socket.io")(http);
+const webpack = require("webpack");
+const config = require("./webpack.config.js");
+const compiler = webpack(config);
+const bcrypt = require("bcrypt");
 
 require('dotenv').config()
 
-var MongoClient = require("mongodb").MongoClient;
-var assert = require('assert');
+const MongoClient = require("mongodb").MongoClient;
+const assert = require('assert');
 const dbURL = `mongodb://${process.env.MONGO_DB_USER}:${process.env.MONGO_DB_PASSWORD}@ds125862.mlab.com:25862/lolchat`;
+const db = MongoClient.connect(dbURL);
 
 app.use(require("webpack-dev-middleware")(
 	compiler,
@@ -22,7 +23,6 @@ app.use(require("webpack-dev-middleware")(
 app.use(require("webpack-hot-middleware")(compiler));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "dist")));
-
 
 // Routes //
 app.get("*", function (req, res) {
@@ -33,10 +33,8 @@ app.post("/action/login", function(req, res) {
 	var nickname = req.body.nickname;
 	var password = req.body.password;
 
- 	MongoClient.connect(dbURL, function(err, client) {
-		assert.equal(null, err); // ??
-
-		const db = client.db("lolchat");
+	db.then(function(client) {
+		let db = client.db("lolchat");
 
 		// Check if nickname has been used
 		var existingUser = db.collection("users").findOne({
@@ -61,8 +59,6 @@ app.post("/action/login", function(req, res) {
 								action: "WRONG_PASSWORD"
 							});
 						}
-						
-						client.close();
 					});
 				}
 
@@ -71,13 +67,11 @@ app.post("/action/login", function(req, res) {
 						error: e,
 						action: "LOGIN_FAILURE_UNKNOWN_ERROR"
 					});
-					client.close();
 				}
 			} else {
 				res.send({
 					action: "ACCOUNT_NONEXISTENT"
 				});
-				client.close();
 			}
 		});
 	});
@@ -87,10 +81,8 @@ app.post("/action/signup", function(req, res) {
 	var nickname = req.body.nickname;
 	var password = req.body.password;
 
- 	MongoClient.connect(dbURL, function(err, client) {
-		assert.equal(null, err); // ??
-
-		const db = client.db("lolchat");
+ 	db.then(function(client) {
+ 		let db = client.db("lolchat");
 
 		// Check if nickname has been used
 		var existingUser = db.collection("users").findOne({
@@ -120,7 +112,6 @@ app.post("/action/signup", function(req, res) {
 							res.send({
 								action: "REGISTRATION_SUCCESS"
 							});
-							client.close();
 					  	});
 					});
 				}
@@ -130,13 +121,11 @@ app.post("/action/signup", function(req, res) {
 						error: e,
 						action: "REGISTRAION_FAILURE_UNKNOWN_ERROR"
 					});
-					client.close();
 				}
 			} else {
 				res.send({
 					action: "NICKNAME_IN_USE"
 				});
-				client.close();
 			}
 		});
 	});
@@ -158,16 +147,25 @@ var matching = false;
 io.on("connection", function(socket) {
 	socket.on("client: new client", function(obj, fn) {
 		fn("matching you with a stranger ...");
-		addUnmatchedClient(obj.nickname);
-		!matching && match();
+		addUnmatchedClient(obj.nickname, socketId);
+
+		if(!matching && unmatchedClients.length > 1) {
+			match();
+		}
 	});
 });
 
-function addUnmatchedClient(nickname) {
-	unmatchedClients.push(nickname);
+function addUnmatchedClient(nickname, socketId) {
+	let clientIsInArray = !!unmatchedClients.find( obj => obj.nickname === nickname );
+
+	if (!clientIsInArray) unmatchedClients.push({nickname, socketId});
+
 	setTimeout(() => {
-		let i = unmatchedClients.indexOf(nickname);
-		if (i > -1) unmatchedClients.splice(i, 1);
+		let clientIsInArray = !!unmatchedClients.find( obj => obj[nickname] === nickname );
+		if (clientIsInArray) {
+			let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
+			unmatchedClients.splice(i, 1);
+		}
 	}, TIMEOUT);
 }
 
@@ -177,6 +175,10 @@ function getDifferentItemFromArray(arr, value) {
 	return getDifferentItemFromArray(arr, value);
 }
 
+function getObjectIndexByPropVal(prop, val, arr) {
+	return arr.map(function(x) {return x[prop]; }).indexOf(val);
+}
+
 function match() {
 	matching = true;
 	var user1 = getDifferentItemFromArray(unmatchedClients, null);
@@ -184,22 +186,44 @@ function match() {
 
 	var user1Rating, user2Rating;
 
-	//dbcall must be synchronous?
+	db.then(function(client) {
+		let db = client.db("lolchat");
 
-	if (Math.abs(user1Rating - user2Rating) < DIFFERENCE && "connection is open") {
-		let i = unmatchedClients.indexOf(user1);
-		if (i > -1) unmatchedClients.splice(i, 1);
-		i = unmatchedClients.indexOf(user2);
-		if (i > -1) unmatchedClients.splice(i, 1);
+		var users = db.collection("users").find({
+			$or: [{"nickname": user1}, {"nickname": user2}]
+		}, function(err, cursor) {
+			cursor.toArray(function(err, result) {
+				for (let i = 0; i < result.length; i++) {
+					result[i].rating = (result[i].thumbsUp + result[i].thumbsDown) / 2;
+				}
 
-		
-	}
+				user1 = {
+					nickname: result[0]["nickname"],
+					rating: result[0]["rating"]
+				};
 
-	if (unmatchedClients < 2) {
-		matching = false;
-	} else {
-		match();
-	}
+				user2 = {
+					nickname: result[1]["nickname"],
+					rating: result[1]["rating"]
+				};
+
+				if (Math.abs(user1.rating - user2.rating) < DIFFERENCE && "connection is open") {
+					//ok ... matchm.
+
+					let i = unmatchedClients.indexOf(user1.nickname);
+					if (i > -1) unmatchedClients.splice(i, 1);
+					i = unmatchedClients.indexOf(user2.nickname);
+					if (i > -1) unmatchedClients.splice(i, 1);
+				}
+
+				if (unmatchedClients < 2) {
+					matching = false;
+				} else {
+					match();
+				}
+			});
+		});
+	});
 }
 
 

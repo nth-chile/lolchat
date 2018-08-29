@@ -9,19 +9,21 @@ class Chat extends React.Component {
 	}
 
 	componentDidMount() {
-		var socket = io();
+		if (this.props.authNickname) {
+			var socket = io();
 
-		var onConnectSend = {
-			nickname: this.props.authNickname
-		};
+			var onConnectSend = {
+				nickname: this.props.authNickname
+			};
 
-		var onConnectCb = function(data) {
-			console.log(data);
-		};
+			var onConnectCb = function(data) {
+				console.log(data);
+			};
 
-		socket.on("connect", function() {
-			socket.emit( "client: new client", onConnectSend, onConnectCb);
-		});
+			socket.on("connect", function() {
+				socket.emit( "client: new client", onConnectSend, onConnectCb);
+			});
+		}
 	}
 
 	onSubmit() {
