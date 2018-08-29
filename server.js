@@ -142,15 +142,24 @@ var DIFFERENCE = .3;
 // unmatchedClients: These are people waiting to be matched. They will be removed from this object TIMEOUT milliseconds after being added.
 var unmatchedClients = [];
 
-// matchedClients: These are people who have been matched.
+/*
+matchedClients: These are people who have been matched.
+	They will be removed from this array on disconnect.
+	Schema: {
+		nickname: String,
+		rating: Int,
+		partner: String,
+		socketId: String
+	}
+*/
 var matchedClients = [];
 
 // Flag, true if matching function is running
 var matching = false;
 
 io.on("connection", function(socket) {
-	socket.on("client: new client", function(obj, fn) {
-		fn("matching you with a stranger ...");
+	socket.on("client: new client", function(obj, cb) {
+		cb("matching you with a stranger ...");
 		addUnmatchedClient(obj.nickname, socket.id);
 
 		console.log("CLIENTS : ", unmatchedClients);
@@ -160,12 +169,8 @@ io.on("connection", function(socket) {
 		}
 	});
 
-	socket.on("client: new message", function(obj, fn) {
-		
-
-		console.log("new message: ", obj.message,  " socketId: ", socket.id);
-
-		fn("success sending your message ...");
+	socket.on("client: new message", function(data, cb) {
+		sendMessage(data, socket, cb);
 	});
 });
 
@@ -180,7 +185,6 @@ function addUnmatchedClient(nickname, socketId) {
 			let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
 			unmatchedClients.splice(i, 1);
 		}
-		console.log('removed', unmatchedClients);
 	}, TIMEOUT);
 }
 
@@ -218,6 +222,7 @@ function match() {
 
 			let a = [user1, user2];
 
+			// Calculate rating, add it to correct object
 			for (let i = 0; i < result.length; i++) {
 				result[i].rating = (result[i].thumbsUp + result[i].thumbsDown) / 2;
 
@@ -245,29 +250,48 @@ function match() {
 			        };
 			    }
 
+			    // If connections open and ratings are close, match
 			    if (Math.abs(a[0].rating - a[1].rating) < DIFFERENCE && areConnectionsOpen) {
-				// Match the users
-				a[0].partner = a[1].socketId;
-				a[1].partner = a[0].socketId;
+					a[0].partner = a[1].socketId;
+					a[1].partner = a[0].socketId;
 
-
-
-
-				// Remove the matched users from `unmatchedClients`
-				for (let i = 0; i < a.length; i++) {
+					// Remove the matched users from `unmatchedClients`
+					for (let i = 0; i < a.length; i++) {
 						let index = getObjectIndexByPropVal("nickname", a[i].nickname, unmatchedClients);
 						if (index > -1) unmatchedClients.splice(index, 1);
 					}
+
+					// Add them to `matchedClients`
+					matchedClients.push(a[0], a[1]);
+					console.log("NEW MATCH. \nMATCHES: ", matchedClients);
+				}
+
+				// Then decide whether to recurse
+				if (unmatchedClients.length < 2) {
+					matching = false;
+				} else {
+					match();
 				}
 			});
-
-			if (unmatchedClients.length < 2) {
-				matching = false;
-			} else {
-				match();
-			}
 		});
 	});
+}
+
+function sendMessage(data, socket, cb) {
+	//console.log(socket.id, matchedClients);
+
+	let message = data.message;
+	let sender = matchedClients.find(elt => {
+		return elt.socketId === socket.id;
+	});
+
+	console.log("CLIENZ: ", matchedClients, "sender :" , sender);
+
+	let to = sender.partner;
+
+	socket.broadcast.to(to).emit('server: new message', { message });
+
+	cb("success sending your message ...");
 }
 
 

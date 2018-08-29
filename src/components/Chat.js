@@ -2,20 +2,23 @@ import React from "react";
 import { render } from "react-dom";
 import { Redirect } from "react-router-dom";
 import io from "socket.io-client";
-const socket = io();
 
 class Chat extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.input = React.createRef();
-		this.messages = ['stranger: sample message'];
 		this.socket = null;
+
+		this.state = {
+			// messages: array of objects with from and msg properties
+			messages: [],
+		}
 	}
 
 	componentDidMount() {
 		if (this.props.authNickname) {
-			
+			this.socket = io();
 
 			var onConnectSend = {
 				nickname: this.props.authNickname
@@ -25,11 +28,20 @@ class Chat extends React.Component {
 				console.log(data);
 			};
 
-			socket.on("connect", function() {
-				console.log(socket);
-				socket.emit( "client: new client", onConnectSend, onConnectCb);
-			});
+			this.socket.on("connect", () => {
+				this.socket.emit( "client: new client", onConnectSend, onConnectCb);
+			
+				this.socket.on("server: new message", (obj) => {
+					let newMsg = {
+						message: obj.message,
+						from: "stranger"
+					}
 
+					this.setState(prevState => ({
+					  messages: [...prevState.messages, newMsg]
+					}));
+				});
+			});
 		}
 	}
 
@@ -44,7 +56,7 @@ class Chat extends React.Component {
 			console.log(data);
 		};
 
-		socket.emit("client: new message", onSendSend, onSendCb);
+		this.socket.emit("client: new message", onSendSend, onSendCb);
 	}
 
 	render() {
@@ -56,7 +68,7 @@ class Chat extends React.Component {
 			<div className="container full-height messages-container">
 				<div className="messages">
 					<div className="status">status message...</div>
-					{this.messages.map(msg => <span>{msg}</span>)}
+					{this.state.messages.map(msg => <span>{msg.from}: {msg.msg}</span>)}
 				</div>
 				<div>
 					<div className="disconnect-btn__wrap">
