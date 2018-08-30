@@ -10,6 +10,7 @@ class Chat extends React.Component {
 		this.socket = null;
 
 		this.state = {
+			disconnectBtn: "disconnect",
 			inputValue: "",
 			// messages: array of objects with from and msg properties
 			messages: [],
@@ -105,6 +106,42 @@ class Chat extends React.Component {
 			return <Redirect to="/" />;
 		}
 
+		let renderDisconnectBtn = () => {
+			switch (this.state.disconnectBtn) {
+				case "disconnect":
+					return (
+						<React.Fragment>
+							<button
+								onClick={() => this.handleDisconnectBtnClick("disconnect")}
+								type="button"
+							>disconnect</button>
+							<button
+								onClick={() => this.handleDisconnectBtnClick("disconnect_downvote")}
+								type="button"
+							>disconnect & downvote</button>
+						</React.Fragment>
+					);
+					break;
+				case "confirm":
+					return (
+						<button
+							onClick={() => this.handleDisconnectBtnClick("confirm")}
+							type="button"
+						>really?</button>
+					);
+					break;
+				case "new":
+					return (
+						<button
+							onClick={() => this.handleDisconnectBtnClick("new")}
+							type="button"
+						>new chat</button>
+					);
+					break;
+				default: 
+			}
+		}
+
 		return (
 			<div className="container full-height messages-container">
 				<div className="messages">
@@ -114,7 +151,7 @@ class Chat extends React.Component {
 				</div>
 				<div>
 					<div className="disconnect-btn__wrap">
-						disconnect
+						{ renderDisconnectBtn() }
 					</div>
 					<input 
 						onChange={this.handleInputChange}
@@ -125,7 +162,7 @@ class Chat extends React.Component {
 					<button
 						disabled={this.state.submitDisabled}
 						type="submit" 
-						onClick={e => this.handleSend(e)}
+						onClick={this.handleSend}
 					>Send</button>
 
 				</div>
