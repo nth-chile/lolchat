@@ -53,7 +53,7 @@ class SignUp extends React.Component {
 		}
 
 		return (
-			<div className="container text-center">
+			<div className="container signup-container text-center">
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
 				<form>

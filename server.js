@@ -175,9 +175,22 @@ io.on("connection", function(socket) {
 
 	socket.on("disconnect", function(reason) {
 		let i = getObjectIndexByPropVal("socketId", socket.id, matchedClients);
-		let partnerId = matchedClients[i]["partnerId"];
-		matchedClients.splice(i, 1);
-		socket.to(partnerId).emit("your partner disconnected");
+
+		if (i > -1) {
+			let partnerId = matchedClients[i]["partnerId"];
+			matchedClients.splice(i, 1);
+			socket.to(partnerId).emit("your partner disconnected");
+		}
+		// Since the client was not matched, it must be unmatched
+		else if ( (i = getObjectIndexByPropVal("socketId", socket.id, unmatchedClients)) > -1) {
+			let partnerId = unmatchedClients[i]["partnerId"];
+			unmatchedClients.splice(i, 1);
+			socket.to(partnerId).emit("your partner disconnected");
+		} else {
+			console.log("Client disconnected and was neither matched nor unmatched.");
+		}
+		
+		
 	});
 });
 
@@ -303,7 +316,7 @@ function sendMessage(data, socket, cb) {
 
 	socket.broadcast.to(to).emit('new message', { message });
 
-	cb("success sending your message ...");
+	cb("message sent");
 }
 
 

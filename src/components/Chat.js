@@ -7,15 +7,18 @@ class Chat extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.input = React.createRef();
 		this.socket = null;
 
 		this.state = {
+			inputValue: "",
 			// messages: array of objects with from and msg properties
 			messages: [],
 			status1: "matching you with a stranger ...",
-			status2: ""
+			status2: "",
+			submitDisabled: true
 		}
+
+		this.handleInputChange = this.handleInputChange.bind(this);
 	}
 
 	componentDidMount() {
@@ -34,7 +37,10 @@ class Chat extends React.Component {
 				this.socket.emit( "new client", onConnectSend, onConnectCb);
 
 				this.socket.on("new match", () => {
-					this.setState({status1: "new match! say hello."});
+					this.setState({
+						status1: "new match! say hello.",
+						submitDisabled: false
+					});
 				});
 			
 				this.socket.on("new message", (obj) => {
@@ -53,24 +59,45 @@ class Chat extends React.Component {
 				});
 
 				this.socket.on("your partner disconnected", () => {
-					this.setState({status2: "this stranger just disconnected."});
+					this.setState({
+						status2: "this stranger just disconnected.",
+						submitDisabled: true
+					});
 				});
 			});
 		}
 	}
 
-	onSend(e) {
+	handleInputChange(e) {
+		this.setState({inputValue: e.target.value});
+	}
+
+	handleSend(e) {
 		e.preventDefault();
+		const { inputValue } = this.state;
 
-		var onSendSend = {
-			message: this.input.current.value
+		let newMsg = {
+			message: inputValue,
+			from: "you"
 		};
 
-		var onSendCb = (data) => {
-			console.log(data);
+		this.setState(prevState => ({
+			messages: [...prevState.messages, newMsg],
+			inputValue: ""
+		}));	
+
+		var handleSendSend = {
+			message: inputValue
 		};
 
-		this.socket.emit("new message", onSendSend, onSendCb);
+		var handleSendCb = (data) => {
+			// if (data === "message sent") {
+			// 	console.log("message sent");
+			// }
+			return;
+		};
+
+		this.socket.emit("new message", handleSendSend, handleSendCb);
 	}
 
 	render() {
@@ -82,18 +109,23 @@ class Chat extends React.Component {
 			<div className="container full-height messages-container">
 				<div className="messages">
 					<div className="status-1">{this.state.status1}</div>
-					{this.state.messages.map(msg => <span>{msg.from}: {msg.msg}</span>)}
+					{this.state.messages.map(msg => <span>{msg.from}: {msg.message}</span>)}
 					<div className="status-2">{this.state.status2}</div>
 				</div>
 				<div>
 					<div className="disconnect-btn__wrap">
 						disconnect
 					</div>
-					<input type="text" ref={this.input} />
+					<input 
+						onChange={this.handleInputChange}
+						type="text" 
+						value={this.state.inputValue}
+					/>
 
-					<button 
+					<button
+						disabled={this.state.submitDisabled}
 						type="submit" 
-						onClick={e => this.onSend(e)}
+						onClick={e => this.handleSend(e)}
 					>Send</button>
 
 				</div>

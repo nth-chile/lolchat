@@ -21,7 +21,7 @@ class App extends React.Component {
 	render() {
 		return (
 			<Router>
-				<div className="container full-height">
+				<div className="full-height">
 					<header></header>
 					<Route 
 						path="/chat" 

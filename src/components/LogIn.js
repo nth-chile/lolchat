@@ -56,11 +56,11 @@ class LogIn extends React.Component {
 		}
 
 		return (
-			<div className="container text-center">
+			<div className="container login-container text-center full-height pt-5">
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
 				<div>log in or <Link to={'/signup'}>sign up</Link></div>
-				<form>
+				<form className="mt-3">
 					<label htmlFor="nickname">nickname</label>
 					<input
 						autoComplete="nickname"

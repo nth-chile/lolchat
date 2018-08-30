@@ -6,14 +6,11 @@ var config = {
 		contentBase: path.resolve(__dirname, "dist"),
 		hot: true
 	},
+	devtool: "source-map",
 	entry: {
 		app: path.resolve(__dirname, "src") + "/index.js"	
 	},
-	output: {
-		path: path.resolve(__dirname, "dist"),
-		filename: "bundle.js",
-		publicPath: path.resolve(__dirname, "dist")
-	},
+	mode: "development",
 	module: {
 		rules: [
 			{
@@ -38,6 +35,11 @@ var config = {
 				]
 			}
 		]
+	},
+	output: {
+		path: path.resolve(__dirname, "dist"),
+		filename: "bundle.js",
+		publicPath: path.resolve(__dirname, "dist")
 	},
 	plugins: [
 		new webpack.HotModuleReplacementPlugin()
