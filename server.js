@@ -148,7 +148,7 @@ matchedClients: These are people who have been matched.
 	Schema: {
 		nickname: String,
 		rating: Int,
-		partner: String,
+		partnerId: String,
 		socketId: String
 	}
 */
@@ -171,6 +171,13 @@ io.on("connection", function(socket) {
 
 	socket.on("new message", function(data, cb) {
 		sendMessage(data, socket, cb);
+	});
+
+	socket.on("disconnect", function(reason) {
+		let i = getObjectIndexByPropVal("socketId", socket.id, matchedClients);
+		let partnerId = matchedClients[i]["partnerId"];
+		matchedClients.splice(i, 1);
+		socket.to(partnerId).emit("your partner disconnected");
 	});
 });
 
@@ -255,8 +262,8 @@ function match() {
 
 			    // If connections open and ratings are close, match
 			    if (Math.abs(a[0].rating - a[1].rating) < DIFFERENCE && areConnectionsOpen) {
-					a[0].partner = a[1].socketId;
-					a[1].partner = a[0].socketId;
+					a[0].partnerId = a[1].socketId;
+					a[1].partnerId = a[0].socketId;
 
 					// Remove the matched users from `unmatchedClients`
 					for (let i = 0; i < a.length; i++) {
@@ -267,6 +274,10 @@ function match() {
 					// Add them to `matchedClients`
 					matchedClients.push(a[0], a[1]);
 					console.log("NEW MATCH. \nMATCHES: ", matchedClients);
+
+					// Tell them they matched
+					io.to(a[0].socketId).emit("new match");
+					io.to(a[1].socketId).emit("new match");
 				}
 
 				// Then decide whether to recurse
@@ -288,7 +299,7 @@ function sendMessage(data, socket, cb) {
 		return elt.socketId === socket.id;
 	});
 
-	let to = sender.partner;
+	let to = sender.partnerId;
 
 	socket.broadcast.to(to).emit('new message', { message });
 

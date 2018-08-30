@@ -13,7 +13,8 @@ class Chat extends React.Component {
 		this.state = {
 			// messages: array of objects with from and msg properties
 			messages: [],
-			status1: "matching you with a stranger ..."
+			status1: "matching you with a stranger ...",
+			status2: ""
 		}
 	}
 
@@ -31,6 +32,10 @@ class Chat extends React.Component {
 
 			this.socket.on("connect", () => {
 				this.socket.emit( "new client", onConnectSend, onConnectCb);
+
+				this.socket.on("new match", () => {
+					this.setState({status1: "new match! say hello."});
+				});
 			
 				this.socket.on("new message", (obj) => {
 					let newMsg = {
@@ -44,8 +49,11 @@ class Chat extends React.Component {
 				});
 
 				this.socket.on("could not find match", () => {
-					console.log("ok");
-					this.setState({status1: "could not find match. please try again."});
+					this.setState({status1: "could not find a match for you. please try again."});
+				});
+
+				this.socket.on("your partner disconnected", () => {
+					this.setState({status2: "this stranger just disconnected."});
 				});
 			});
 		}
@@ -75,6 +83,7 @@ class Chat extends React.Component {
 				<div className="messages">
 					<div className="status-1">{this.state.status1}</div>
 					{this.state.messages.map(msg => <span>{msg.from}: {msg.msg}</span>)}
+					<div className="status-2">{this.state.status2}</div>
 				</div>
 				<div>
 					<div className="disconnect-btn__wrap">
