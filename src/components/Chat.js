@@ -13,6 +13,7 @@ class Chat extends React.Component {
 		this.state = {
 			// messages: array of objects with from and msg properties
 			messages: [],
+			status1: "matching you with a stranger ..."
 		}
 	}
 
@@ -29,9 +30,9 @@ class Chat extends React.Component {
 			};
 
 			this.socket.on("connect", () => {
-				this.socket.emit( "client: new client", onConnectSend, onConnectCb);
+				this.socket.emit( "new client", onConnectSend, onConnectCb);
 			
-				this.socket.on("server: new message", (obj) => {
+				this.socket.on("new message", (obj) => {
 					let newMsg = {
 						message: obj.message,
 						from: "stranger"
@@ -40,6 +41,11 @@ class Chat extends React.Component {
 					this.setState(prevState => ({
 					  messages: [...prevState.messages, newMsg]
 					}));
+				});
+
+				this.socket.on("could not find match", () => {
+					console.log("ok");
+					this.setState({status1: "could not find match. please try again."});
 				});
 			});
 		}
@@ -56,7 +62,7 @@ class Chat extends React.Component {
 			console.log(data);
 		};
 
-		this.socket.emit("client: new message", onSendSend, onSendCb);
+		this.socket.emit("new message", onSendSend, onSendCb);
 	}
 
 	render() {
@@ -67,7 +73,7 @@ class Chat extends React.Component {
 		return (
 			<div className="container full-height messages-container">
 				<div className="messages">
-					<div className="status">status message...</div>
+					<div className="status-1">{this.state.status1}</div>
 					{this.state.messages.map(msg => <span>{msg.from}: {msg.msg}</span>)}
 				</div>
 				<div>

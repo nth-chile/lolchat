@@ -158,9 +158,9 @@ var matchedClients = [];
 var matching = false;
 
 io.on("connection", function(socket) {
-	socket.on("client: new client", function(obj, cb) {
+	socket.on("new client", function(obj, cb) {
 		cb("matching you with a stranger ...");
-		addUnmatchedClient(obj.nickname, socket.id);
+		addUnmatchedClient(obj.nickname, socket);
 
 		console.log("CLIENTS : ", unmatchedClients);
 
@@ -169,12 +169,14 @@ io.on("connection", function(socket) {
 		}
 	});
 
-	socket.on("client: new message", function(data, cb) {
+	socket.on("new message", function(data, cb) {
 		sendMessage(data, socket, cb);
 	});
 });
 
-function addUnmatchedClient(nickname, socketId) {
+function addUnmatchedClient(nickname, socket) {
+	let socketId = socket.id;
+
 	let clientIsInArray = !!unmatchedClients.find( obj => obj.nickname === nickname );
 
 	if (!clientIsInArray) unmatchedClients.push({nickname, socketId});
@@ -184,6 +186,7 @@ function addUnmatchedClient(nickname, socketId) {
 		if (clientIsInArray) {
 			let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
 			unmatchedClients.splice(i, 1);
+			socket.emit("could not find match");
 		}
 	}, TIMEOUT);
 }
@@ -285,11 +288,9 @@ function sendMessage(data, socket, cb) {
 		return elt.socketId === socket.id;
 	});
 
-	console.log("CLIENZ: ", matchedClients, "sender :" , sender);
-
 	let to = sender.partner;
 
-	socket.broadcast.to(to).emit('server: new message', { message });
+	socket.broadcast.to(to).emit('new message', { message });
 
 	cb("success sending your message ...");
 }
