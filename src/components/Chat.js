@@ -11,20 +11,26 @@ class Chat extends React.Component {
 
 		this.state = {
 			disconnectBtn: "disconnect",
+			disconnectBtnsDisabled: true,
 			inputValue: "",
 			// messages: array of objects with from and msg properties
 			messages: [],
 			status1: "matching you with a stranger ...",
 			status2: "",
-			submitDisabled: true
+			submitDisabled: true,
+			// pendingVote: "up" or "down"
+			pendingVote: null
 		}
 
+		this.handleDisconnectBtnClick = this.handleDisconnectBtnClick.bind(this);
 		this.handleInputChange = this.handleInputChange.bind(this);
 	}
 
 	componentDidMount() {
 		if (this.props.authNickname) {
 			this.socket = io();
+
+			console.log(this.props.authRating);
 
 			var onConnectSend = {
 				nickname: this.props.authNickname
@@ -40,7 +46,8 @@ class Chat extends React.Component {
 				this.socket.on("new match", () => {
 					this.setState({
 						status1: "new match! say hello.",
-						submitDisabled: false
+						submitDisabled: false,
+						disconnectBtnsDisabled: false
 					});
 				});
 			
@@ -66,6 +73,44 @@ class Chat extends React.Component {
 					});
 				});
 			});
+		}
+	}
+
+	handleDisconnectBtnClick(btnId) {
+		switch (btnId) {
+			case "disconnect":;
+				this.setState({
+					pendingVote: "up",
+					disconnectBtn: "confirm"
+				});
+
+				break;
+
+			case "disconnect_downvote":
+				this.setState({
+					pendingVote: "down",
+					disconnectBtn: "confirm"
+				});
+
+				break;
+
+			case "confirm":
+				let vote = this.state.pendingVote;
+
+				let voteCallback = (res) => {
+					console.log(res);
+					if (res === "success") {
+						this.socket.disconnect();
+						this.setState({disconnectBtnsDisabled: false});
+					}
+				}
+
+				this.socket.emit( "vote", { vote }, voteCallback);
+
+				break;
+
+			case "new":
+				console.log("new chat btn clicked");
 		}
 	}
 
@@ -112,10 +157,12 @@ class Chat extends React.Component {
 					return (
 						<React.Fragment>
 							<button
+								disabled={this.state.disconnectBtnsDisabled}
 								onClick={() => this.handleDisconnectBtnClick("disconnect")}
 								type="button"
 							>disconnect</button>
 							<button
+								disabled={this.state.disconnectBtnsDisabled}
 								onClick={() => this.handleDisconnectBtnClick("disconnect_downvote")}
 								type="button"
 							>disconnect & downvote</button>
@@ -125,6 +172,7 @@ class Chat extends React.Component {
 				case "confirm":
 					return (
 						<button
+							disabled={this.state.disconnectBtnsDisabled}
 							onClick={() => this.handleDisconnectBtnClick("confirm")}
 							type="button"
 						>really?</button>
@@ -133,12 +181,11 @@ class Chat extends React.Component {
 				case "new":
 					return (
 						<button
+							disabled={this.state.disconnectBtnsDisabled}
 							onClick={() => this.handleDisconnectBtnClick("new")}
 							type="button"
 						>new chat</button>
 					);
-					break;
-				default: 
 			}
 		}
 

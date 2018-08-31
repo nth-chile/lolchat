@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
-import { Redirect } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import axios from "axios";
 
 class SignUp extends React.Component {
@@ -34,6 +34,7 @@ class SignUp extends React.Component {
 						break;
 					case "REGISTRATION_SUCCESS":
 						this.props.setAuthNickname(nickname);
+						this.props.setAuthRating(response.data.rating);
 						this.setState({toChat: true});
 						break;
 					default:
@@ -56,6 +57,7 @@ class SignUp extends React.Component {
 			<div className="container signup-container text-center">
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
+				<div>sign up or <Link to={'/'}>log in</Link></div>
 				<form>
 					<label htmlFor="nickname">nickname</label>
 					<input 
@@ -67,7 +69,7 @@ class SignUp extends React.Component {
 					/><br />
 					<label htmlFor="password">password</label>
 					<input 
-						autocomplete="new-password"
+						autoComplete="new-password"
 						name="password"
 						onChange={e => this.setState({password: e.target.value})}
 						type="password"

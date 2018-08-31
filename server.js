@@ -51,8 +51,11 @@ app.post("/action/login", function(req, res) {
 						}
 
 						if (result) {
+							let rating = getRating(doc.thumbsUp, doc.thumbsDown);
+
 							res.send({
-								action: "LOGIN_SUCCESS"
+								action: "LOGIN_SUCCESS",
+								rating
 							});
 						} else {
 							res.send({
@@ -109,8 +112,11 @@ app.post("/action/signup", function(req, res) {
 								throw err;
 							}
 
+							let rating = getRating(0, 0);
+
 							res.send({
-								action: "REGISTRATION_SUCCESS"
+								action: "REGISTRATION_SUCCESS",
+								rating
 							});
 					  	});
 					});
@@ -137,7 +143,7 @@ app.post("/action/signup", function(req, res) {
 // Time people wait before socket is closed
 var TIMEOUT = 10000;
 // Difference between user ratings above which two people cannot connect
-var DIFFERENCE = .3;
+var DIFFERENCE = .5;
 
 // unmatchedClients: These are people waiting to be matched. They will be removed from this object TIMEOUT milliseconds after being added.
 var unmatchedClients = [];
@@ -162,8 +168,6 @@ io.on("connection", function(socket) {
 		cb("matching you with a stranger ...");
 		addUnmatchedClient(obj.nickname, socket);
 
-		console.log("CLIENTS : ", unmatchedClients);
-
 		if(!matching && unmatchedClients.length > 1) {
 			match();
 		}
@@ -181,7 +185,7 @@ io.on("connection", function(socket) {
 			matchedClients.splice(i, 1);
 			socket.to(partnerId).emit("your partner disconnected");
 		}
-		// Since the client was not matched, it must be unmatched
+		// Since the disconnected client was not matched, it must be unmatched
 		else if ( (i = getObjectIndexByPropVal("socketId", socket.id, unmatchedClients)) > -1) {
 			let partnerId = unmatchedClients[i]["partnerId"];
 			unmatchedClients.splice(i, 1);
@@ -189,8 +193,32 @@ io.on("connection", function(socket) {
 		} else {
 			console.log("Client disconnected and was neither matched nor unmatched.");
 		}
-		
-		
+	});
+
+	socket.on("vote", (data, cb) => {
+		let voterIndex = getObjectIndexByPropVal("socketId", socket.id, matchedClients);
+		let partnerNickname;
+
+		if (voterIndex > -1) {
+			let partnerId = matchedClients[voterIndex].partnerId;
+			let partnerIndex = getObjectIndexByPropVal("socketId", partnerId, matchedClients);
+
+			if (partnerIndex > -1) {
+				partnerNickname = matchedClients[partnerIndex].nickname;
+			} else {
+				console.log("Could not find client who voted.");
+			}
+		} else {
+			console.log("Could not find client who voted.");
+		}
+
+		if (data.vote && data.vote === "up") {
+			vote(partnerNickname, "up", cb);
+		} else if (data.vote && data.vote === "down") {
+			vote(partnerNickname, "down", cb);
+		} else {
+			console.log("Vote was neither up nor down.");
+		}
 	});
 });
 
@@ -222,6 +250,11 @@ function getObjectIndexByPropVal(propStr, val, arr) {
 	return arr.map(function(x) {return x[propStr]; }).indexOf(val);
 }
 
+let getRating = (thumbsUp, thumbsDown) => {
+	let total = thumbsUp + thumbsDown;
+	return (thumbsUp / total) || 0.5;
+};
+
 function match() {
 	matching = true;
 	var user1 = getDifferentItemFromArray(unmatchedClients, null);
@@ -231,8 +264,6 @@ function match() {
 		matching = false;
 		return;
 	}
-
-	let counter = 0;
 
 	db.then(function(client) {
 		let db = client.db("lolchat");
@@ -247,7 +278,7 @@ function match() {
 
 			// Calculate rating, add it to correct object
 			for (let i = 0; i < result.length; i++) {
-				result[i].rating = (result[i].thumbsUp + result[i].thumbsDown) / 2;
+				result[i].rating = getRating(result[i].thumbsUp, result[i].thumbsDown);
 
 				for (let j = 0; j < a.length; j++) {
 					if (a[j].nickname === result[i].nickname) {
@@ -274,7 +305,7 @@ function match() {
 			    }
 
 			    // If connections open and ratings are close, match
-			    if (Math.abs(a[0].rating - a[1].rating) < DIFFERENCE && areConnectionsOpen) {
+			    if (Math.abs(a[0].rating - a[1].rating) <= DIFFERENCE && areConnectionsOpen) {
 					a[0].partnerId = a[1].socketId;
 					a[1].partnerId = a[0].socketId;
 
@@ -318,6 +349,33 @@ function sendMessage(data, socket, cb) {
 
 	cb("message sent");
 }
+
+let vote = (partnerNickname, vote, cb) => {
+
+	let callback = (err, result) => {
+		if (err) {
+			console.log(err);
+		}
+
+		if (result.ok === 1) {
+			// Tell client
+			cb("success");
+		}
+	}
+
+	let field = vote === "up" ? "thumbsUp" : "thumbsDown";
+
+	let filter = { "nickname": partnerNickname };
+
+	let update = {
+		$inc: { [field]: 1 }
+	};
+
+	db.then(function(client) {
+		let db = client.db("lolchat");
+		var users = db.collection("users").findOneAndUpdate( filter, update, null, callback );
+	});
+};
 
 
 

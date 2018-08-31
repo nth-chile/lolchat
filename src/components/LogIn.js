@@ -34,6 +34,7 @@ class LogIn extends React.Component {
 						break;
 					case "LOGIN_SUCCESS":
 						this.props.setAuthNickname(nickname);
+						this.props.setAuthRating(response.data.rating);
 						this.setState({toChat: true});
 						break;
 					case "WRONG_PASSWORD":
