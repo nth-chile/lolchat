@@ -8,6 +8,7 @@ class Chat extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.keysDown = {};
 		this.socket = null;
 
 		this.state = {
@@ -26,8 +27,9 @@ class Chat extends React.Component {
 		}
 
 		this.handleDisconnectBtnClick = this.handleDisconnectBtnClick.bind(this);
-		this.handleEnterKeyDown = this.handleEnterKeyDown.bind(this);
 		this.handleInputChange = this.handleInputChange.bind(this);
+		this.handleKeyDown = this.handleKeyDown.bind(this);
+		this.handleKeyUp = this.handleKeyUp.bind(this);
 		this.handleNewChatBtnClick = this.handleNewChatBtnClick.bind(this);
 		this.handleSend = this.handleSend.bind(this);
 	}
@@ -102,11 +104,13 @@ class Chat extends React.Component {
 	}
 
 	componentWillMount() {
-		document.addEventListener("keydown", this.handleEnterKeyDown, false);
+		document.addEventListener("keydown", this.handleKeyDown, false);
+		document.addEventListener("keyup", this.handleKeyUp, false);
 	}
 
 	componentWillUnmount() {
-		document.removeEventListener("keydown", this.handleEnterKeyDown, false);
+		document.removeEventListener("keydown", this.handleKeyDown, false);
+		document.removeEventListener("keyup", this.handleKeyUp, false);
 	}
 
 	handleDisconnectBtnClick(btnId) {
@@ -148,16 +152,29 @@ class Chat extends React.Component {
 		}
 	}
 
-	handleEnterKeyDown(e) {
-		console.log(e.keyCode);
-        if(e.keyCode === 13 && document.activeElement.id === "msg-write-box" ) {
+	handleInputChange(e) {
+
+		console.log(e.target.value);
+		this.setState({inputValue: e.target.value});
+	}
+
+	handleKeyDown(e) {
+		this.keysDown[e.key] = true;
+
+        if (
+        	this.keysDown["Enter"] && 
+    		!this.keysDown["Shift"] &&
+     		document.activeElement.id === "msg-write-box"
+     	) {
+     		console.log(this.keysDown);
         	e.preventDefault();
 			this.handleSend();
         }
 	}
 
-	handleInputChange(e) {
-		this.setState({inputValue: e.target.value});
+	handleKeyUp(e) {
+		console.log("keyup");
+		this.keysDown[e.key] = false;
 	}
 
 	handleNewChatBtnClick(e) {
@@ -184,18 +201,18 @@ class Chat extends React.Component {
 				disconnectBtn: "disconnect"
 			}));	
 
-			var handleSendSend = {
+			var data = {
 				message: inputValue
 			};
 
-			var handleSendCb = (data) => {
+			var cb = (data) => {
 				// if (data === "message sent") {
 				// 	console.log("message sent");
 				// }
 				return;
 			};
 
-			this.socket.emit("send message", handleSendSend, handleSendCb);
+			this.socket.emit("send message", data, cb);
 		}
 	}
 
@@ -203,6 +220,8 @@ class Chat extends React.Component {
 		if (!this.props.authNickname) {
 			return <Redirect to="/" />;
 		}
+
+		console.log(this.state.messages);
 
 		let renderDisconnectBtn = () => {
 			switch (this.state.disconnectBtn) {
