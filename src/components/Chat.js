@@ -2,6 +2,7 @@ import React from "react";
 import { render } from "react-dom";
 import { Redirect } from "react-router-dom";
 import io from "socket.io-client";
+import shortid from "shortid";
 
 class Chat extends React.Component {
 	constructor(props) {
@@ -10,12 +11,14 @@ class Chat extends React.Component {
 		this.socket = null;
 
 		this.state = {
+			showChatEndedStuff: false,
 			disconnectBtn: "disconnect",
 			disconnectBtnsDisabled: true,
 			inputValue: "",
+			matching: false,
 			// messages: array of objects with from and msg properties
 			messages: [],
-			status1: "matching you with a stranger ...",
+			status1: "",
 			status2: "",
 			submitDisabled: true,
 			// pendingVote: "up" or "down"
@@ -23,7 +26,10 @@ class Chat extends React.Component {
 		}
 
 		this.handleDisconnectBtnClick = this.handleDisconnectBtnClick.bind(this);
+		this.handleEnterKeyDown = this.handleEnterKeyDown.bind(this);
 		this.handleInputChange = this.handleInputChange.bind(this);
+		this.handleNewChatBtnClick = this.handleNewChatBtnClick.bind(this);
+		this.handleSend = this.handleSend.bind(this);
 	}
 
 	componentDidMount() {
@@ -36,44 +42,71 @@ class Chat extends React.Component {
 				nickname: this.props.authNickname
 			};
 
-			var onConnectCb = function(data) {
-				console.log(data);
+			var onConnectCb = (data) => {
+				this.setState({
+					status1: "matching you with a stranger ...",
+					matching: true
+				});
 			};
 
 			this.socket.on("connect", () => {
 				this.socket.emit( "new client", onConnectSend, onConnectCb);
+			});
 
-				this.socket.on("new match", () => {
-					this.setState({
-						status1: "new match! say hello.",
-						submitDisabled: false,
-						disconnectBtnsDisabled: false
-					});
-				});
-			
-				this.socket.on("new message", (obj) => {
-					let newMsg = {
-						message: obj.message,
-						from: "stranger"
-					}
-
-					this.setState(prevState => ({
-					  messages: [...prevState.messages, newMsg]
-					}));
-				});
-
-				this.socket.on("could not find match", () => {
-					this.setState({status1: "could not find a match for you. please try again."});
-				});
-
-				this.socket.on("your partner disconnected", () => {
-					this.setState({
-						status2: "this stranger just disconnected.",
-						submitDisabled: true
-					});
+			this.socket.on("new match", () => {
+				this.setState({
+					status1: "new match! say hello.",
+					submitDisabled: false,
+					disconnectBtnsDisabled: false,
+					disconnectBtn: "disconnect",
+					showChatEndedStuff: false,	
+					matching: false,
+					messages: []
 				});
 			});
+		
+			this.socket.on("new message", (obj) => {
+				let newMsg = {
+					message: obj.message,
+					from: "stranger",
+					id: shortid.generate()
+				}
+
+				this.setState(prevState => ({
+				  messages: [...prevState.messages, newMsg]
+				}));
+			});
+
+			this.socket.on("could not find match", () => {
+				this.setState({
+					status1: "could not find a match for you. please try again.",
+					disconnectBtn: "new",
+					disconnectBtnsDisabled: false,
+					matching: false
+				});
+				
+				this.socket.disconnect();
+			});
+
+			this.socket.on("your partner disconnected", () => {
+				this.setState({
+					status2: "this stranger just disconnected.",
+					submitDisabled: true,
+					disconnectBtn: "new",
+					showChatEndedStuff: false
+				});
+
+				this.socket.disconnect();
+			});
 		}
+	}
+
+	componentWillMount() {
+		document.addEventListener("keydown", this.handleEnterKeyDown, false);
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("keydown", this.handleEnterKeyDown, false);
 	}
 
 	handleDisconnectBtnClick(btnId) {
@@ -98,52 +131,72 @@ class Chat extends React.Component {
 				let vote = this.state.pendingVote;
 
 				let voteCallback = (res) => {
-					console.log(res);
 					if (res === "success") {
 						this.socket.disconnect();
-						this.setState({disconnectBtnsDisabled: false});
+						this.setState({
+							disconnectBtn: "new",
+							submitDisabled: true,
+							status2: "you just disconnected.",
+							showChatEndedStuff: false
+						});
+					} else {
+						console.log('vote failed');
 					}
 				}
 
-				this.socket.emit( "vote", { vote }, voteCallback);
-
-				break;
-
-			case "new":
-				console.log("new chat btn clicked");
+				this.socket.emit( "vote/disconnect", { vote }, voteCallback);
 		}
+	}
+
+	handleEnterKeyDown(e) {
+		console.log(e.keyCode);
+        if(e.keyCode === 13 && document.activeElement.id === "msg-write-box" ) {
+        	e.preventDefault();
+			this.handleSend();
+        }
 	}
 
 	handleInputChange(e) {
 		this.setState({inputValue: e.target.value});
 	}
 
+	handleNewChatBtnClick(e) {
+		if (!this.state.matching) {
+			this.socket.disconnect();
+			this.socket.open();
+		}
+	}
+
 	handleSend(e) {
-		e.preventDefault();
+		e && e.preventDefault();
 		const { inputValue } = this.state;
 
-		let newMsg = {
-			message: inputValue,
-			from: "you"
-		};
+		if (inputValue) {
+			let newMsg = {
+				message: inputValue,
+				from: "you",
+				id: shortid.generate()
+			};
 
-		this.setState(prevState => ({
-			messages: [...prevState.messages, newMsg],
-			inputValue: ""
-		}));	
+			this.setState(prevState => ({
+				messages: [...prevState.messages, newMsg],
+				inputValue: "",
+				disconnectBtn: "disconnect"
+			}));	
 
-		var handleSendSend = {
-			message: inputValue
-		};
+			var handleSendSend = {
+				message: inputValue
+			};
 
-		var handleSendCb = (data) => {
-			// if (data === "message sent") {
-			// 	console.log("message sent");
-			// }
-			return;
-		};
+			var handleSendCb = (data) => {
+				// if (data === "message sent") {
+				// 	console.log("message sent");
+				// }
+				return;
+			};
 
-		this.socket.emit("new message", handleSendSend, handleSendCb);
+			this.socket.emit("send message", handleSendSend, handleSendCb);
+		}
 	}
 
 	render() {
@@ -157,11 +210,13 @@ class Chat extends React.Component {
 					return (
 						<React.Fragment>
 							<button
+								className={this.state.disconnectBtnsDisabled ? "btn--disconnect" : "btn--disconnect btn--disabled"}
 								disabled={this.state.disconnectBtnsDisabled}
 								onClick={() => this.handleDisconnectBtnClick("disconnect")}
 								type="button"
 							>disconnect</button>
 							<button
+								className={this.state.disconnectBtnsDisabled ? "btn--disconnect_downvote" : "btn--disconnect_downvote btn--disabled"}
 								disabled={this.state.disconnectBtnsDisabled}
 								onClick={() => this.handleDisconnectBtnClick("disconnect_downvote")}
 								type="button"
@@ -172,6 +227,7 @@ class Chat extends React.Component {
 				case "confirm":
 					return (
 						<button
+							class={this.state.disconnectBtnsDisabled ? "btn--confirm" : "btn--confirm btn--disabled"}
 							disabled={this.state.disconnectBtnsDisabled}
 							onClick={() => this.handleDisconnectBtnClick("confirm")}
 							type="button"
@@ -181,8 +237,9 @@ class Chat extends React.Component {
 				case "new":
 					return (
 						<button
+							className={this.state.disconnectBtnsDisabled ? "btn--new-chat" : "btn--new-chat btn--disabled"}
 							disabled={this.state.disconnectBtnsDisabled}
-							onClick={() => this.handleDisconnectBtnClick("new")}
+							onClick={() => this.handleNewChatBtnClick()}
 							type="button"
 						>new chat</button>
 					);
@@ -190,28 +247,42 @@ class Chat extends React.Component {
 		}
 
 		return (
-			<div className="container full-height messages-container">
-				<div className="messages">
-					<div className="status-1">{this.state.status1}</div>
-					{this.state.messages.map(msg => <span>{msg.from}: {msg.message}</span>)}
-					<div className="status-2">{this.state.status2}</div>
-				</div>
-				<div>
-					<div className="disconnect-btn__wrap">
-						{ renderDisconnectBtn() }
+			<div className="messages-container">
+				<header></header>
+				<div className="messages__wrap">
+					<div>
+						<div className="status-1">{this.state.status1}</div>
+						{this.state.messages.map(msg => 
+							<span key={msg.id}>
+								<span className={msg.from === "you" ? "text-red" : "text-blue"}>{msg.from}:</span> {msg.message}
+							</span>)}
+						<div className="status-2">{this.state.status2}</div>
+						{this.state.showChatEndedStuff && (
+							<button
+								type="button"
+								onClick={this.handleNewChatBtnClick}
+							>new chat</button>
+						)}
 					</div>
-					<input 
-						onChange={this.handleInputChange}
-						type="text" 
-						value={this.state.inputValue}
-					/>
+					<div className="chat-controls">
+						<div className="disconnect-btn__wrap">
+							{ renderDisconnectBtn() }
+						</div>
+						<textarea
+							autoFocus 
+							id="msg-write-box"
+							onChange={this.handleInputChange}
+							type="text" 
+							value={this.state.inputValue}
+						/>
 
-					<button
-						disabled={this.state.submitDisabled}
-						type="submit" 
-						onClick={this.handleSend}
-					>Send</button>
-
+						<button
+							className={this.state.submitDisabled ? "btn--send btn--disabled" : "btn--send"}
+							disabled={this.state.submitDisabled}
+							type="submit" 
+							onClick={this.handleSend}
+						>send</button>
+					</div>
 				</div>
 			</div>
 		);

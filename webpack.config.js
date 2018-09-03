@@ -8,7 +8,7 @@ var config = {
 	},
 	devtool: "source-map",
 	entry: {
-		app: path.resolve(__dirname, "src") + "/index.js"	
+		app: [path.resolve(__dirname, "src") + "/index.js", "webpack-hot-middleware/client"],
 	},
 	mode: "development",
 	module: {

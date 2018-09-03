@@ -44,7 +44,7 @@ class SignUp extends React.Component {
 			})
 			.catch( function (error) { console.log(error) } );
 		} else {
-			this.setState({errorMsg: "I think you left some fields blank."})
+			this.setState({errorMsg: "You left some fields blank."})
 		}
 	}
 
@@ -54,7 +54,8 @@ class SignUp extends React.Component {
 		}
 
 		return (
-			<div className="container signup-container text-center">
+			<div className="signup-container text-center">
+				<header></header>
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
 				<div>sign up or <Link to={'/'}>log in</Link></div>
@@ -83,7 +84,7 @@ class SignUp extends React.Component {
 					<input 
 						type="submit"
 						onClick={e => this.onSubmit(e)}
-						value="chat with a stranger"
+						value="chat with strangers"
 					/>
 				</form>
 			</div>

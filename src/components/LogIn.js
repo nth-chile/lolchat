@@ -46,7 +46,7 @@ class LogIn extends React.Component {
 			})
 			.catch( function (error) { console.log(error) } );
 		} else {
-			this.setState({errorMsg: "I think you left some fields blank."})
+			this.setState({errorMsg: "You left some fields blank."})
 		}
 
 	}
@@ -57,7 +57,8 @@ class LogIn extends React.Component {
 		}
 
 		return (
-			<div className="container login-container text-center full-height pt-5">
+			<div className="login-container text-center full-height">
+				<header></header>
 				<h1>lolchat</h1>
 				<div className="h5">chat with decent strangers</div>
 				<div>log in or <Link to={'/signup'}>sign up</Link></div>
@@ -86,7 +87,7 @@ class LogIn extends React.Component {
 					<input 
 						type="submit"
 						onClick={e => this.onSubmit(e)}
-						value="chat with a stranger"
+						value="chat with strangers"
 					/>
 				</form>
 			</div>

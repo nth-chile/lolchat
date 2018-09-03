@@ -26,17 +26,16 @@ class App extends React.Component {
 	render() {
 		return (
 			<Router>
-				<div className="full-height">
-					<header></header>
+				<div>
 					<Route 
-						path="/chat" 
+						path="/chat" // /chat
 						render={(props) => <Chat
 							authNickname={this.state.authNickname}
 							authRating={this.state.authRating} 
 						/>}
 					/>
 					<Route 
-						path="/" 
+						path="/" // /
 						render={(props) => <LogIn 
 							setAuthNickname={this.setAuthNickname.bind(this)} 
 							setAuthRating={this.setAuthRating.bind(this)} 

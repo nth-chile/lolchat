@@ -173,13 +173,16 @@ io.on("connection", function(socket) {
 		}
 	});
 
-	socket.on("new message", function(data, cb) {
+	socket.on("send message", function(data, cb) {
 		sendMessage(data, socket, cb);
 	});
 
 	socket.on("disconnect", function(reason) {
 		let i = getObjectIndexByPropVal("socketId", socket.id, matchedClients);
 
+		let matchedNames = matchedClients.map((val) => val.nickname);
+		let unmatchedNames = unmatchedClients.map((val) => val.nickname);
+		
 		if (i > -1) {
 			let partnerId = matchedClients[i]["partnerId"];
 			matchedClients.splice(i, 1);
@@ -193,9 +196,14 @@ io.on("connection", function(socket) {
 		} else {
 			console.log("Client disconnected and was neither matched nor unmatched.");
 		}
+
+		// matchedNames = matchedClients.map((val) => val.nickname);
+		// unmatchedNames = unmatchedClients.map((val) => val.nickname);
+		// console.log("Matched after splice: ", matchedNames);
+		// console.log("Unmatched after splice: ", unmatchedNames);
 	});
 
-	socket.on("vote", (data, cb) => {
+	socket.on("vote/disconnect", (data, cb) => {
 		let voterIndex = getObjectIndexByPropVal("socketId", socket.id, matchedClients);
 		let partnerNickname;
 
@@ -224,16 +232,22 @@ io.on("connection", function(socket) {
 
 function addUnmatchedClient(nickname, socket) {
 	let socketId = socket.id;
+	let timeout;
 
 	let clientIsInArray = !!unmatchedClients.find( obj => obj.nickname === nickname );
 
-	if (!clientIsInArray) unmatchedClients.push({nickname, socketId});
+	if (!clientIsInArray) {
+		//clearTimeout(timeout);
+		unmatchedClients.push({nickname, socketId});
+	}
 
-	setTimeout((nickname) => {
-		let clientIsInArray = !!unmatchedClients.find( obj => obj[nickname] === nickname );
+	timeout = setTimeout(() => {
+		let clientIsInArray = !!unmatchedClients.find( obj => obj["nickname"] === nickname );
 		if (clientIsInArray) {
-			let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
-			unmatchedClients.splice(i, 1);
+			// let i = getObjectIndexByPropVal("nickname", nickname, unmatchedClients);
+			// unmatchedClients.splice(i, 1);
+
+			// commenting the above two lines because this .emit causes a .disconnect on client
 			socket.emit("could not find match");
 		}
 	}, TIMEOUT);
@@ -317,7 +331,6 @@ function match() {
 
 					// Add them to `matchedClients`
 					matchedClients.push(a[0], a[1]);
-					console.log("NEW MATCH. \nMATCHES: ", matchedClients);
 
 					// Tell them they matched
 					io.to(a[0].socketId).emit("new match");
@@ -336,7 +349,6 @@ function match() {
 }
 
 function sendMessage(data, socket, cb) {
-	//console.log(socket.id, matchedClients);
 
 	let message = data.message;
 	let sender = matchedClients.find(elt => {
@@ -380,6 +392,3 @@ let vote = (partnerNickname, vote, cb) => {
 
 
 http.listen(3000);
-// app.listen(3000, function() {
-// 	console.log('listening on port 3000.');
-// });
