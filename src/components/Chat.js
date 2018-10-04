@@ -47,7 +47,9 @@ class Chat extends React.Component {
 			var onConnectCb = (data) => {
 				this.setState({
 					status1: "matching you with a stranger ...",
-					matching: true
+					matching: true,
+					messages: [],
+					status2: ""
 				});
 			};
 
@@ -154,7 +156,10 @@ class Chat extends React.Component {
 
 	handleInputChange(e) {
 
-		console.log(e.target.value);
+		if ( e.target.value.length - this.state.inputValue.length > 1 ) {
+			return;
+		}
+
 		this.setState({inputValue: e.target.value});
 	}
 
@@ -220,8 +225,6 @@ class Chat extends React.Component {
 		if (!this.props.authNickname) {
 			return <Redirect to="/" />;
 		}
-
-		console.log(this.state.messages);
 
 		let renderDisconnectBtn = () => {
 			switch (this.state.disconnectBtn) {

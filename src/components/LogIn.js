@@ -13,6 +13,16 @@ class LogIn extends React.Component {
 			errorMsg: "",
 			toChat: false
 		};
+
+		this.handleChange = this.handleChange.bind(this);
+	}
+
+	handleChange(e) {
+		if ( e.target.value.length - this.state[e.target.name].length > 1 ) {
+			return;
+		}
+
+		this.setState({[e.target.name]: e.target.value})
 	}
 
 	onSubmit(e) {
@@ -20,7 +30,7 @@ class LogIn extends React.Component {
 
 		var { nickname, password } = this.state;
 
-		if (nickname.length > 0 && password.length > 0) {
+		if (nickname.length > 4 && password.length > 4) {
 			axios.post("/action/login", {
 				nickname,
 				password
@@ -46,9 +56,8 @@ class LogIn extends React.Component {
 			})
 			.catch( function (error) { console.log(error) } );
 		} else {
-			this.setState({errorMsg: "You left some fields blank."})
+			this.setState({errorMsg: "nickname and password must be 5 or more characters in length."})
 		}
-
 	}
 
 	render() {
@@ -67,15 +76,15 @@ class LogIn extends React.Component {
 					<input
 						autoComplete="nickname"
 						name="nickname"
-						onChange={e => this.setState({nickname: e.target.value})}
+						onChange={this.handleChange}
 						type="text"
 						value={this.state.nickname}
 					/><br />
 					<label htmlFor="password">password</label>
 					<input 
-						autoComplete="new-password"
+						autoComplete="current-password"
 						name="password"
-						onChange={e => this.setState({password: e.target.value})}
+						onChange={this.handleChange}
 						type="password"
 						value={this.state.password}
 					/><br />

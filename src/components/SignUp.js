@@ -13,6 +13,16 @@ class SignUp extends React.Component {
 			errorMsg: "",
 			toChat: false,
 		};
+
+		this.handleChange = this.handleChange.bind(this);
+	}
+
+	handleChange(e) {
+		if ( e.target.value.length - this.state[e.target.name].length > 1 ) {
+			return;
+		}
+
+		this.setState({[e.target.name]: e.target.value})
 	}
 
 	onSubmit(e) {
@@ -20,7 +30,7 @@ class SignUp extends React.Component {
 
 		var { nickname, password } = this.state;
 
-		if (nickname.length > 0 && password.length > 0) {
+		if (nickname.length > 4 && password.length > 4) {
 			axios.post("/action/signup", {
 				nickname,
 				password
@@ -30,7 +40,7 @@ class SignUp extends React.Component {
 
 				switch (response.data.action) {
 					case "NICKNAME_IN_USE":
-						this.setState({errorMsg: "That nickname has already been registered."});
+						this.setState({errorMsg: "that nickname has already been registered."});
 						break;
 					case "REGISTRATION_SUCCESS":
 						this.props.setAuthNickname(nickname);
@@ -38,13 +48,13 @@ class SignUp extends React.Component {
 						this.setState({toChat: true});
 						break;
 					default:
-						this.setState({errorMsg: "Registration failed. Please try again later."});
+						this.setState({errorMsg: "registration failed. please try again later."});
 
 				}
 			})
 			.catch( function (error) { console.log(error) } );
 		} else {
-			this.setState({errorMsg: "You left some fields blank."})
+			this.setState({errorMsg: "nickname and password must be 5 or more characters in length."})
 		}
 	}
 
@@ -64,7 +74,7 @@ class SignUp extends React.Component {
 					<input 
 						autoComplete="nickname"
 						name="nickname"
-						onChange={e => this.setState({nickname: e.target.value})}
+						onChange={this.handleChange}
 						type="text"
 						value={this.state.nickname}
 					/><br />
@@ -72,7 +82,7 @@ class SignUp extends React.Component {
 					<input 
 						autoComplete="new-password"
 						name="password"
-						onChange={e => this.setState({password: e.target.value})}
+						onChange={this.handleChange}
 						type="password"
 						value={this.state.password}
 					/><br />

@@ -44,7 +44,12 @@ button {
 }
 
 .disconnect-btn__wrap {
-	//padding: 0 5px;
+	height: 96px;
+}
+
+.btn--disabled {
+	cursor: default;
+	opacity: .6;
 }
 
 .btn--disconnect {
@@ -61,6 +66,7 @@ button {
 .btn--confirm {
     height: 100%;
     padding: 0 2em;
+    width: 193px;
 }
 
 .btn--new-chat {
