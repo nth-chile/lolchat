@@ -8,8 +8,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "npm run build-dev && npm run start",
-    "build-dev": "webpack -d  && cp src/index.html dist/index.html",
-    "build-prod": "webpack -p && cp src/index.html dist/index.html",
+    "build-dev": "webpack --config webpack.development.js  && cp src/index.html dist/index.html",
+    "build-prod": "webpack --config webpack.production.js && cp src/index.html dist/index.html",
+    "heroku-postbuild": "yarn build-prod",
     "start": "node server.js"
   },
   "dependencies": {

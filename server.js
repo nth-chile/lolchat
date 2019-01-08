@@ -5,22 +5,28 @@ const bodyParser = require("body-parser");
 const	http = require("http").Server(app);
 const io = require("socket.io")(http);
 const webpack = require("webpack");
-const config = require("./webpack.config.js");
-const compiler = webpack(config);
 const bcrypt = require("bcrypt");
+const MongoClient = require("mongodb").MongoClient;
+const assert = require('assert');
 
 require('dotenv').config()
 
-const MongoClient = require("mongodb").MongoClient;
-const assert = require('assert');
+const IS_DEV = process.env.NODE_ENV === "development";
+
 const dbURL = `mongodb://${process.env.MONGO_DB_USER}:${process.env.MONGO_DB_PASSWORD}@ds125862.mlab.com:25862/lolchat`;
 const db = MongoClient.connect(dbURL);
 
-app.use(require("webpack-dev-middleware")(
-	compiler,
-	config.devServer
-));
-app.use(require("webpack-hot-middleware")(compiler));
+if (IS_DEV) {
+	const config = require("./webpack.development.js");
+	const compiler = webpack(config);
+
+	app.use(require("webpack-dev-middleware")(
+		compiler,
+		config.devServer
+	));
+	app.use(require("webpack-hot-middleware")(compiler));
+}
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "dist")));
 
