@@ -2,8 +2,10 @@ import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import "./style/index.scss";
-require("webpack-hot-middleware/client");
+const IS_DEV = process.env.NODE_ENV === "development";
 import { Chat, LogIn, SignUp } from "./components"
+
+if (IS_DEV) require("webpack-hot-middleware/client");
 
 class App extends React.Component {
 	constructor(props) {
