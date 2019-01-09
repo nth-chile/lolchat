@@ -32,6 +32,7 @@ class Chat extends React.Component {
 		this.handleKeyUp = this.handleKeyUp.bind(this);
 		this.handleNewChatBtnClick = this.handleNewChatBtnClick.bind(this);
 		this.handleSend = this.handleSend.bind(this);
+		this.scrollToBottom = this.scrollToBottom.bind(this);
 	}
 
 	componentDidMount() {
@@ -105,6 +106,10 @@ class Chat extends React.Component {
 		}
 	}
 
+	componentDidUpdate() {
+		this.scrollToBottom();
+	}
+
 	componentWillMount() {
 		document.addEventListener("keydown", this.handleKeyDown, false);
 		document.addEventListener("keyup", this.handleKeyUp, false);
@@ -166,19 +171,17 @@ class Chat extends React.Component {
 	handleKeyDown(e) {
 		this.keysDown[e.key] = true;
 
-        if (
-        	this.keysDown["Enter"] && 
-    		!this.keysDown["Shift"] &&
-     		document.activeElement.id === "msg-write-box"
-     	) {
-     		console.log(this.keysDown);
-        	e.preventDefault();
-			this.handleSend();
-        }
+    if (
+    	this.keysDown["Enter"] && 
+    	!this.keysDown["Shift"] && 
+    	document.activeElement.id === "msg-write-box"
+    ) {
+      	e.preventDefault();
+				this.handleSend();
+      }
 	}
 
 	handleKeyUp(e) {
-		console.log("keyup");
 		this.keysDown[e.key] = false;
 	}
 
@@ -219,6 +222,10 @@ class Chat extends React.Component {
 
 			this.socket.emit("send message", data, cb);
 		}
+	}
+
+	scrollToBottom() {
+	  this.messagesEnd.scrollIntoView({ behavior: "smooth" });
 	}
 
 	render() {
@@ -285,6 +292,13 @@ class Chat extends React.Component {
 								onClick={this.handleNewChatBtnClick}
 							>new chat</button>
 						)}
+
+					 {/* This div is scrolled into view to keep messages div scrolled to bottom */}
+						<div
+							style={{ float:"left", clear: "both" }}
+		          ref={el => { this.messagesEnd = el }}
+		        >
+		        </div>
 					</div>
 					<div className="chat-controls">
 						<div className="disconnect-btn__wrap">

@@ -68,8 +68,8 @@ class LogIn extends React.Component {
 		return (
 			<div className="login-container text-center full-height">
 				<header></header>
-				<h1>lolchat</h1>
-				<div className="h5">chat with decent strangers</div>
+				<h1>karma chat</h1>
+				<div className="h5 headline">karma chat enforces the golden rule by matching you with people who treat others as you do</div>
 				<div>log in or <Link to={'/signup'}>sign up</Link></div>
 				<form className="mt-3">
 					<label htmlFor="nickname">nickname</label>

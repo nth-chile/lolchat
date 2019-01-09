@@ -36,8 +36,6 @@ class SignUp extends React.Component {
 				password
 			})
 			.then((response) => {
-				console.log(response);
-
 				switch (response.data.action) {
 					case "NICKNAME_IN_USE":
 						this.setState({errorMsg: "that nickname has already been registered."});
@@ -66,8 +64,8 @@ class SignUp extends React.Component {
 		return (
 			<div className="signup-container text-center">
 				<header></header>
-				<h1>lolchat</h1>
-				<div className="h5">chat with decent strangers</div>
+				<h1>karma chat</h1>
+				<div className="h5 headline">karma chat enforces the golden rule by matching you with people who treat others as you do</div>
 				<div>sign up or <Link to={'/'}>log in</Link></div>
 				<form>
 					<label htmlFor="nickname">nickname</label>

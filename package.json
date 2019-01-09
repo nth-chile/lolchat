@@ -7,7 +7,7 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run build-dev && npm run start",
+    "dev": "yarn build-dev && yarn start",
     "build-dev": "webpack --config webpack.development.js  && cp src/index.html dist/index.html",
     "build-prod": "webpack --config webpack.production.js && cp src/index.html dist/index.html",
     "heroku-postbuild": "yarn build-prod",

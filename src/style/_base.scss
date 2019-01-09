@@ -43,6 +43,11 @@ button {
 	}
 }
 
+.headline {
+	max-width: 24em;
+	margin: 1em auto;
+}
+
 .disconnect-btn__wrap {
 	height: 96px;
 }
@@ -80,6 +85,7 @@ button {
 
 .chat-controls {
 	display: flex;
+	min-height: 106px;
 	padding: 5px;
 
 	textarea {
@@ -139,6 +145,7 @@ button {
 		background: linear-gradient(to bottom, rgba(100, 198, 255, 0.11) 0%, rgba(60, 130, 195, 0) 100%);
 		border-radius: 8px;
 		flex-grow: 1;
+		overflow: auto;
 		padding: 5px;
 
 		& > span {

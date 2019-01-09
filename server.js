@@ -361,11 +361,13 @@ function sendMessage(data, socket, cb) {
 		return elt.socketId === socket.id;
 	});
 
-	let to = sender.partnerId;
+	
+	if (sender) {
+		let to = sender.partnerId;
 
-	socket.broadcast.to(to).emit('new message', { message });
-
-	cb("message sent");
+		socket.broadcast.to(to).emit('new message', { message });
+		cb("message sent");
+	}
 }
 
 let vote = (partnerNickname, vote, cb) => {
