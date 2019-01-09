@@ -32,3 +32,6 @@ _ignored/
 # bundle
 dist/bundle.js
 dist/bundle.js.map
+
+# Domain Control Validation file
+FDEE7C9665637C2DD97F0DD1A1B6EB3B.txt
