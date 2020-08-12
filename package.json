@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "assert": "^1.4.1",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "babel-polyfill": "^6.26.0",
     "babel-preset-minify": "^0.4.3",
     "bcrypt": "^3.0.0",
